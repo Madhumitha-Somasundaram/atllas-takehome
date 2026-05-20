@@ -2,6 +2,7 @@ import { Router } from 'express';
 import IRoute from '../types/IRoute';
 import { User } from '../services/db';
 import { Op, Order } from "sequelize";
+import { userSchema } from "../shared/userSchema";
 
 const UsersRouter: IRoute = {
   route: '/users',
@@ -92,20 +93,25 @@ const UsersRouter: IRoute = {
     });
 
     // ---------------- CREATE USER ----------------
+
     router.post("/", async (req, res) => {
       try {
+        const parsed = userSchema.safeParse(req.body);
+
+        if (!parsed.success) {
+          return res.status(400).json({
+            success: false,
+            errors: parsed.error.flatten(),
+          });
+        }
+
         const user = await User.create({
-          ...req.body,
+          ...parsed.data,
           registered: new Date(),
-          adminNotes: req.body.adminNotes ?? "",
         });
 
-        return res.status(201).json({
-          success: true,
-          data: user,
-        });
+        return res.status(201).json({ success: true, data: user });
       } catch (err) {
-        console.error("CREATE user failed", err);
         return res.status(500).json({ success: false });
       }
     });
@@ -124,8 +130,15 @@ const UsersRouter: IRoute = {
           });
         }
 
-        await user.update(req.body);
+        const parsed = userSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res.status(400).json({
+            success: false,
+            errors: parsed.error.flatten(),
+          });
+        }
 
+        await user.update(parsed.data);
         return res.json({
           success: true,
           data: user,
