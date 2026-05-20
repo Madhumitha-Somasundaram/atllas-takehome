@@ -13,6 +13,7 @@ const appCfg = {
 const app = express();
 
 // Attach any middleware
+app.use(express.json());
 app.use(Cors);
 app.use(attachSequelize);
 
