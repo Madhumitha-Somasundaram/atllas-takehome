@@ -13,7 +13,7 @@ type Props = {
   setOrder: (v: "ASC" | "DESC") => void;
 };
 
-// ---------------- SORTABLE HEADER ----------------
+// ---------------- HEADER ----------------
 function SortableHeader({
   label,
   field,
@@ -42,19 +42,20 @@ function SortableHeader({
 
   return (
     <th
-      onClick={handleClick}
       className={`
         p-3 cursor-pointer select-none
-        text-gray-800 dark:text-white
-        border-b dark:border-violet-600
+        dark:border-b border-violet-500
         transition
         ${active ? "font-semibold" : ""}
+        text-gray-800 dark:text-white
       `}
+      onClick={handleClick}
     >
       <div className="flex items-center gap-1">
         {label}
+
         {active && (
-          <span className="text-xs text-violet-600 dark:text-violet-400">
+          <span className="text-xs text-violet-800 dark:text-violet-500">
             {order === "ASC" ? "▲" : "▼"}
           </span>
         )}
@@ -74,7 +75,13 @@ export default function UserTable({
   setOrder,
 }: Props) {
   return (
-    <div className="rounded-2xl shadow overflow-x-auto bg-white dark:bg-gray-900 transition-colors">
+    <div
+      className="
+        rounded-2xl shadow overflow-x-auto
+        bg-white dark:bg-gray-900 dark:border-2 border-violet-600
+        transition-colors duration-300
+      "
+    >
       <table className="w-full text-sm min-w-[1100px]">
 
         {/* HEADER */}
@@ -90,7 +97,7 @@ export default function UserTable({
             <SortableHeader label="Notes" field="adminNotes" {...{ sort, order, setSort, setOrder }} />
             <SortableHeader label="Registered" field="registered" {...{ sort, order, setSort, setOrder }} />
 
-            <th className="p-3 text-gray-800 dark:text-white border-b dark:border-violet-600">
+            <th className="p-3 text-gray-800 dark:text-white dark:border-b border-violet-600">
               Actions
             </th>
           </tr>
@@ -103,38 +110,38 @@ export default function UserTable({
               key={u.id}
               className="
                 bg-stone-100
-                dark:bg-gray-900 dark:text-white
-                hover:bg-violet-900/20 dark:hover:bg-violet-500/10
+                dark:bg-gray-900 dark:text-white dark:border-b border-violet-500/40
+                hover:bg-violet-900/30 dark:hover:bg-violet-500/20
                 transition
               "
             >
-              <td className="p-3">{u.id}</td>
-              <td className="p-3">{u.firstName}</td>
-              <td className="p-3">{u.middleName || "-"}</td>
-              <td className="p-3">{u.lastName}</td>
-              <td className="p-3">{u.email}</td>
-              <td className="p-3">{u.phoneNumber || "-"}</td>
-              <td className="p-3">{u.address || "-"}</td>
-              <td className="p-3">{u.adminNotes || "-"}</td>
-              <td className="p-3">
+              <td className="p-3 text-gray-800 dark:text-white">{u.id}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.firstName}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.middleName || "-"}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.lastName}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.email}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.phoneNumber || "-"}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.address || "-"}</td>
+              <td className="p-3 text-gray-800 dark:text-white">{u.adminNotes || "-"}</td>
+              <td className="p-3 text-gray-800 dark:text-white">
                 {u.registered ? new Date(u.registered).toLocaleDateString() : "-"}
               </td>
 
               <td className="p-3 flex gap-2">
-                <button
-                  onClick={() => onEdit(u)}
-                  className="px-3 py-1 bg-violet-700 hover:bg-violet-500 text-white rounded-lg transition"
-                >
-                  Edit
-                </button>
+                  <button
+                    onClick={() => onEdit(u)}
+                    className="px-3 py-1 bg-violet-800 hover:bg-violet-500 transition text-white rounded-lg dark:bg-violet-600 dark:hover:bg-violet-400"
+                  >
+                    Edit
+                  </button>
 
-                <button
-                  onClick={() => onDelete(u.id)}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-400 text-white rounded-lg transition"
-                >
-                  Delete
-                </button>
-              </td>
+                  <button
+                    onClick={() => onDelete(u.id)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-400 transition text-white rounded-lg"
+                  >
+                    Delete
+                  </button>
+                </td>
             </tr>
           ))}
         </tbody>

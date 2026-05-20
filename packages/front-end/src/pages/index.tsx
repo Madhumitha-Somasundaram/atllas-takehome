@@ -34,6 +34,31 @@ export default function Home() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<"create" | "edit">("edit");
 
+  // ---------------- THEME ----------------
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+
+    const initial =
+      saved ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light");
+
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
   // ---------------- FETCH USERS ----------------
   const loadUsers = async (reset = false) => {
     if (loading) return;
@@ -128,42 +153,42 @@ export default function Home() {
 
   // ---------------- SAVE ----------------
   const saveUser = async () => {
-    if (!editingUser) return;
+  if (!editingUser) return;
 
-    const result = userSchema.safeParse(formData);
+  const result = userSchema.safeParse(formData);
 
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
+  if (!result.success) {
+    const fieldErrors: Record<string, string> = {};
 
-      result.error.issues.forEach((issue) => {
-        const field = issue.path[0] as string;
-        fieldErrors[field] = issue.message;
-      });
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0] as string;
+      fieldErrors[field] = issue.message;
+    });
 
-      setErrors(fieldErrors);
-      return;
-    }
+    setErrors(fieldErrors);
+    return;
+  }
 
-    setErrors({});
+  setErrors({}); // clear errors if valid
 
-    const validData: UserFormData = result.data;
+  const validData: UserFormData = result.data;
 
-    if (mode === "create") {
-      await createUserApi(validData);
-      await loadUsers(true);
-      setEditingUser(null);
-      return;
-    }
-
-    const res = await updateUserApi(editingUser.id, validData);
-    const data = await res.json();
-
-    setUsers((prev) =>
-      prev.map((u) => (u.id === editingUser.id ? data.data : u))
-    );
-
+  if (mode === "create") {
+    await createUserApi(validData);
+    await loadUsers(true);
     setEditingUser(null);
-  };
+    return;
+  }
+
+  const res = await updateUserApi(editingUser.id, validData);
+  const data = await res.json();
+
+  setUsers((prev) =>
+    prev.map((u) => (u.id === editingUser.id ? data.data : u))
+  );
+
+  setEditingUser(null);
+};
 
   return (
     <>
@@ -178,6 +203,30 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-black dark:text-white">
             User Management
           </h1>
+
+          {/* THEME TOGGLE */}
+          <button
+            onClick={toggleTheme}
+            className="relative w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center px-1 mx-auto transition-colors duration-300"
+          >
+            <div
+              className={`absolute w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${
+                theme === "dark" ? "translate-x-8" : "translate-x-0"
+              }`}
+            />
+
+            <img
+        src={theme === "dark" ? "/sun1.png" : "/sun.png"}
+        className="w-4 h-4 absolute left-2 transition-opacity duration-300"
+        alt="sun"
+      />
+
+            <img
+              src="/moon.png"
+              className="w-4 h-4 absolute right-2"
+              alt="moon"
+            />
+          </button>
         </div>
 
         {/* TOOLBAR */}
@@ -213,17 +262,17 @@ export default function Home() {
         {/* MODAL */}
         {editingUser && (
           <EditUserModal
-            user={editingUser}
-            formData={formData}
-            setFormData={setFormData}
-            onClose={() => {
-              setEditingUser(null);
-              setErrors({});
-            }}
-            onSave={saveUser}
-            errors={errors}
-            mode={mode}
-          />
+          user={editingUser}
+          formData={formData}
+          setFormData={setFormData}
+          onClose={() => {
+            setEditingUser(null);
+            setErrors({});
+          }}
+          onSave={saveUser}
+          errors={errors}
+          mode={mode}
+        />
         )}
       </main>
     </>
