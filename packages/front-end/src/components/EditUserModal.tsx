@@ -1,6 +1,7 @@
+"use client";
+
 import { User } from "../types/user";
-import { Autocomplete } from "@react-google-maps/api";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   user: User;
@@ -21,27 +22,71 @@ export default function EditUserModal({
   errors,
   mode,
 }: Props) {
-  const autocompleteRef =
-    useRef<google.maps.places.Autocomplete | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const onLoad = (
-    autocomplete: google.maps.places.Autocomplete
-  ) => {
-    autocompleteRef.current = autocomplete;
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // ✅ Prefill
+  useEffect(() => {
+    if (mode === "edit" && user) {
+      setFormData({
+        firstName: user.firstName || "",
+        middleName: user.middleName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        address: user.address || "",
+        adminNotes: user.adminNotes || "",
+      });
+    }
+  }, [mode, user, setFormData]);
+
+  // ✅ Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+    };
+  }, []);
+
+  // ✅ Fetch Google suggestions
+  const fetchPredictions = async (value: string) => {
+    if (!value.trim()) {
+      setPredictions([]);
+      return;
+    }
+
+    try {
+      //@ts-ignore
+      const { suggestions } =
+        await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+          {
+            input: value,
+          }
+        );
+
+      setPredictions(suggestions || []);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Google Places Error:", error);
+    }
   };
 
-  const onPlaceChanged = () => {
-    if (!autocompleteRef.current) return;
-
-    const place = autocompleteRef.current.getPlace();
-
-    setFormData((prev: any) => ({
-      ...prev,
-      address: place.formatted_address || "",
-    }));
-  };
-
-  const handleInputChange = (
+  const handleInputChange = async (
     field: string,
     value: string
   ) => {
@@ -49,19 +94,46 @@ export default function EditUserModal({
       ...prev,
       [field]: value,
     }));
+
+    // address typing
+    if (field === "address") {
+      await fetchPredictions(value);
+    }
+  };
+
+  // ✅ Click suggestion
+  const handleSuggestionClick = async (suggestion: any) => {
+    const placePrediction = suggestion.placePrediction;
+
+    const place = placePrediction.toPlace();
+
+    await place.fetchFields({
+      fields: ["formattedAddress"],
+    });
+
+    const address = place.formattedAddress || "";
+
+    setFormData((prev: any) => ({
+      ...prev,
+      address,
+    }));
+
+    setPredictions([]);
+    setShowDropdown(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-white/50 flex items-center justify-center p-6 z-50">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl space-y-3">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl space-y-4">
 
+        {/* TITLE */}
         <h2 className="text-xl font-semibold text-black dark:text-white">
           {mode === "create"
             ? "Create New User"
             : `Editing User #${user.id}`}
         </h2>
 
-        {/* NORMAL INPUTS */}
+        {/* OTHER INPUTS */}
         {[
           "firstName",
           "middleName",
@@ -70,129 +142,111 @@ export default function EditUserModal({
           "phoneNumber",
         ].map((field) => (
           <div key={field} className="space-y-1">
-  <div
-    className="border rounded-xl border-gray-300 dark:border-violet-500/50 bg-white dark:bg-gray-700 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-700 transition-all duration-200">
-    <input
-      className="
-        w-full p-2 rounded-xl
-        bg-transparent
-        text-black dark:text-white
-        outline-none
-      "
-      placeholder={field}
-      value={formData[field] || ""}
-      onChange={(e) =>
-        handleInputChange(field, e.target.value)
-      }
-    />
-  </div>
+            <input
+              className="w-full p-2 rounded-xl border border-gray-300 dark:border-violet-500/50 bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
+              placeholder={field}
+              value={formData[field] || ""}
+              onChange={(e) =>
+                handleInputChange(
+                  field,
+                  e.target.value
+                )
+              }
+            />
 
-  {errors?.[field] && (
-    <p className="text-red-500 text-sm">
-      {errors[field]}
-    </p>
-  )}
-</div>
+            {errors?.[field] && (
+              <p className="text-red-500 text-sm">
+                {errors[field]}
+              </p>
+            )}
+          </div>
         ))}
 
-        {/* ADDRESS AUTOCOMPLETE */}
-<div className="space-y-1">
-  <div
-    className="
-      border rounded-xl
-      border-gray-300 dark:border-violet-500/50
-      bg-white dark:bg-gray-700
+        {/* ADDRESS */}
+        <div
+          ref={wrapperRef}
+          className="space-y-1 relative"
+        >
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Address
+          </label>
 
-      focus-within:border-violet-500
-      focus-within:ring-1
-      focus-within:ring-violet-700
+          <input
+            type="text"
+            placeholder="Enter address"
+            value={formData.address || ""}
+            onChange={(e) =>
+              handleInputChange(
+                "address",
+                e.target.value
+              )
+            }
+            onFocus={() => {
+              if (predictions.length > 0) {
+                setShowDropdown(true);
+              }
+            }}
+            className="w-full p-2 rounded-xl border border-gray-300 dark:border-violet-500/50 bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
+          />
 
-      transition-all duration-200
-    "
-  >
-    <Autocomplete
-      onLoad={onLoad}
-      onPlaceChanged={onPlaceChanged}
-    >
-      <input
-        className="
-          w-full p-2 rounded-xl
-          bg-transparent
-          text-black dark:text-white
-          outline-none
-        "
-        placeholder="Address"
-        value={formData.address || ""}
-        onChange={(e) =>
-          handleInputChange(
-            "address",
-            e.target.value
-          )
-        }
-      />
-    </Autocomplete>
-  </div>
+          {/* DROPDOWN */}
+          {showDropdown && predictions.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full rounded-xl border border-gray-300 dark:border-violet-500/50 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
 
-  {errors?.address && (
-    <p className="text-red-500 text-sm">
-      {errors.address}
-    </p>
-  )}
-</div>
+              {predictions.map(
+                (suggestion: any, index: number) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() =>
+                      handleSuggestionClick(
+                        suggestion
+                      )
+                    }
+                    className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-black dark:text-white"
+                  >
+                    {
+                      suggestion.placePrediction
+                        ?.text?.text
+                    }
+                  </button>
+                )
+              )}
+            </div>
+          )}
 
-{/* NOTES */}
-<div
-  className="
-    border rounded-xl
-    border-gray-300 dark:border-violet-500/50
-    bg-white dark:bg-gray-700
+          {errors?.address && (
+            <p className="text-red-500 text-sm">
+              {errors.address}
+            </p>
+          )}
+        </div>
 
-    focus-within:border-violet-500
-    focus-within:ring-1
-    focus-within:ring-violet-700
-
-    transition-all duration-200
-  "
->
-  <textarea
-    className="
-      w-full p-2 rounded-xl
-      bg-transparent
-      text-black dark:text-white
-      outline-none
-      resize-none
-    "
-    placeholder="Notes"
-    value={formData.adminNotes || ""}
-    onChange={(e) =>
-      handleInputChange(
-        "adminNotes",
-        e.target.value
-      )
-    }
-  />
-</div>
+        {/* NOTES */}
+        <textarea
+          className="w-full p-2 rounded-xl border border-gray-300 dark:border-violet-500/50 bg-white dark:bg-gray-700 text-black dark:text-white outline-none resize-none"
+          placeholder="Notes"
+          value={formData.adminNotes || ""}
+          onChange={(e) =>
+            handleInputChange(
+              "adminNotes",
+              e.target.value
+            )
+          }
+        />
 
         {/* BUTTONS */}
         <div className="flex justify-end gap-2 pt-2">
           <button
             onClick={onClose}
-            className="
-              px-4 py-2 rounded-xl border
-              border-gray-300 dark:border-violet-700
-              text-black dark:text-white
-            "
+            className="px-4 py-2 rounded-xl border border-gray-300 dark:border-violet-700 text-black dark:text-white"
           >
             Cancel
           </button>
 
           <button
             onClick={onSave}
-            className="
-              px-4 py-2 rounded-xl
-              bg-black dark:bg-violet-700
-              text-white
-            "
+            className="px-4 py-2 rounded-xl bg-black dark:bg-violet-700 text-white"
           >
             Save
           </button>

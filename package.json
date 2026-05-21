@@ -5,7 +5,8 @@
     "seed": "ts-node --transpileOnly scripts/seed.ts",
     "seed-prod": "ts-node --transpileOnly scripts/seed.ts --full",
     "bundle": "node scripts/bundle.mjs",
-    "prepare-submission": "node scripts/bundle.mjs"
+    "prepare-submission": "node scripts/bundle.mjs",
+    "lint": "npm run lint --workspaces"
   },
   "workspaces": [
     "packages/front-end",
