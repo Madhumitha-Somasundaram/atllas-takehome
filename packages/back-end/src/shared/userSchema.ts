@@ -7,11 +7,16 @@ export const userSchema = z.object({
 
   lastName: z.string().min(1, "Last name is required"),
 
-  email: z.string().email("Invalid email"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
 
   phoneNumber: z
     .string()
-    .regex(/^\+?[0-9]{7,15}$/, "Invalid phone number")
+    .refine((val) => !val || /^\+?[0-9]{7,15}$/.test(val), {
+      message: "Invalid phone number",
+    })
     .optional()
     .nullable()
     .or(z.literal("")),
