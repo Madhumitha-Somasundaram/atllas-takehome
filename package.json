@@ -21,6 +21,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@react-google-maps/api": "^2.20.8"
+    "@react-google-maps/api": "^2.20.8",
+    "react-international-phone": "^4.8.0"
   }
 }
