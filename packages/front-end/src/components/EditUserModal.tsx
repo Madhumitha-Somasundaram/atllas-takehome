@@ -260,10 +260,10 @@ export default function EditUserModal({
           <PhoneInput
             defaultCountry="us"
             value={formData.phoneNumber || ""}
-            onChange={(phone) =>
+            onChange={(phone, meta) =>
               handleInputChange(
                 "phoneNumber",
-                phone
+                meta.inputValue
               )
             }
             inputClassName="

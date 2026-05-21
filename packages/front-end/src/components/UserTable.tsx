@@ -384,65 +384,6 @@ function UserCard({
   );
 }
 
-// ---------------- MOBILE SORT CONTROLS ----------------
-function MobileSortControls({
-  sort,
-  order,
-  setSort,
-  setOrder,
-}: {
-  sort: SortField;
-  order: "ASC" | "DESC";
-  setSort: (v: SortField) => void;
-  setOrder: (v: "ASC" | "DESC") => void;
-}) {
-  const sortOptions: { value: SortField; label: string }[] = [
-    { value: "id", label: "ID" },
-    { value: "firstName", label: "First Name" },
-    { value: "middleName", label: "Middle Name" },
-    { value: "lastName", label: "Last Name" },
-    { value: "email", label: "Email" },
-    { value: "phoneNumber", label: "Phone" },
-    { value: "address", label: "Address" },
-    { value: "adminNotes", label: "Notes" },
-    { value: "registered", label: "Registered" },
-  ];
-
-  return (
-    <div className="flex gap-2 mb-4">
-      <select
-        value={sort}
-        onChange={(e) => setSort(e.target.value as SortField)}
-        className="
-          flex-1 px-4 py-2 rounded-lg
-          bg-white dark:bg-gray-800
-          text-gray-800 dark:text-white
-          border border-gray-300 dark:border-violet-500
-          focus:outline-none focus:ring-2 focus:ring-violet-500
-        "
-      >
-        {sortOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            Sort by: {option.label}
-          </option>
-        ))}
-      </select>
-
-      <button
-        onClick={() =>
-          setOrder(order === "ASC" ? "DESC" : "ASC")
-        }
-        className="px-4 py-2 rounded-lg bg-violet-800 dark:bg-violet-800 text-white transition flex items-center gap-2">
-        {order === "ASC" ? "▲" : "▼"}
-
-        <span className="hidden sm:inline">
-          {order === "ASC" ? "Ascending" : "Descending"}
-        </span>
-      </button>
-    </div>
-  );
-}
-
 // ---------------- BULK DELETE CONFIRMATION ----------------
 function BulkDeleteConfirmation({
   count,
@@ -765,26 +706,17 @@ export default function UserTable({
       </div>
 
       {/* MOBILE VIEW */}
-      <div className="lg:hidden">
-        <MobileSortControls
-          sort={sort}
-          order={order}
-          setSort={setSort}
-          setOrder={setOrder}
-        />
-
-        <div className="space-y-4">
-          {users.map((u) => (
-            <UserCard
-              key={u.id}
-              user={u}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              isSelected={selectedIds.has(u.id)}
-              onToggleSelect={() => toggleSelect(u.id)}
-            />
-          ))}
-        </div>
+      <div className="lg:hidden space-y-4 mt-4">
+        {users.map((u) => (
+          <UserCard
+            key={u.id}
+            user={u}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            isSelected={selectedIds.has(u.id)}
+            onToggleSelect={() => toggleSelect(u.id)}
+          />
+        ))}
       </div>
 
       {/* BULK DELETE CONFIRM */}

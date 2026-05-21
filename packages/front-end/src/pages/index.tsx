@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Head from "next/head";
 
 import { User } from "../types/user";
@@ -28,6 +28,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const loadingRef = useRef(false);
 
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<any>({});
@@ -60,31 +61,36 @@ export default function Home() {
   };
 
   // ---------------- FETCH USERS ----------------
-  const loadUsers = async (reset = false) => {
-    if (loading) return;
+  const loadUsers = useCallback(async (reset = false) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
 
-    const currentPage = reset ? 1 : page;
+    setPage((currentPage) => {
+      const pageToFetch = reset ? 1 : currentPage;
 
-    const data = await fetchUsers(
-      `page=${currentPage}&limit=25&search=${search}&sort=${sort}&order=${order}`
-    );
+      fetchUsers(
+        `page=${pageToFetch}&limit=25&search=${search}&sort=${sort}&order=${order}`
+      ).then((data) => {
+        const newUsers = data?.data ?? [];
 
-    const newUsers = data?.data ?? [];
+        setUsers((prev) => (reset ? newUsers : [...prev, ...newUsers]));
+        setHasMore(Boolean(data?.hasMore));
+        setPage(pageToFetch + 1);
+        setLoading(false);
+        loadingRef.current = false;
+      });
 
-    setUsers((prev) => (reset ? newUsers : [...prev, ...newUsers]));
-    setHasMore(Boolean(data?.hasMore));
-    setPage(currentPage + 1);
-
-    setLoading(false);
-  };
+      return reset ? 1 : currentPage;
+    });
+  }, [search, sort, order]);
 
   // ---------------- SORT ----------------
   useEffect(() => {
     setUsers([]);
     setPage(1);
     loadUsers(true);
-  }, [sort, order]);
+  }, [sort, order, loadUsers]);
 
   // ---------------- SEARCH ----------------
   useEffect(() => {
@@ -95,7 +101,7 @@ export default function Home() {
     }, 300);
 
     return () => clearTimeout(t);
-  }, [search]);
+  }, [search, loadUsers]);
 
   // ---------------- INFINITE SCROLL ----------------
   useEffect(() => {
@@ -109,7 +115,7 @@ export default function Home() {
     if (el) obs.observe(el);
 
     return () => obs.disconnect();
-  }, [hasMore, loading]);
+  }, [hasMore, loading, loadUsers]);
 
   // ---------------- CREATE ----------------
   const addUser = () => {
@@ -180,7 +186,15 @@ export default function Home() {
   const validData: UserFormData = result.data;
 
   if (mode === "create") {
-    await createUserApi(validData);
+    const res = await createUserApi(validData);
+    const data = await res.json();
+
+    // Check for field errors from backend (e.g., duplicate email)
+    if (!data.success && data.fieldErrors) {
+      setErrors(data.fieldErrors);
+      return;
+    }
+
     await loadUsers(true);
     setEditingUser(null);
     return;
@@ -188,6 +202,12 @@ export default function Home() {
 
   const res = await updateUserApi(editingUser.id, validData);
   const data = await res.json();
+
+  // Check for field errors from backend (e.g., duplicate email)
+  if (!data.success && data.fieldErrors) {
+    setErrors(data.fieldErrors);
+    return;
+  }
 
   setUsers((prev) =>
     prev.map((u) => (u.id === editingUser.id ? data.data : u))

@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { LoadScript } from "@react-google-maps/api";
 import "../styles/globals.css";
 
+// ✅ keep static
+const GOOGLE_LIBRARIES: ("places")[] = ["places"];
+
 export default function App({ Component, pageProps }: any) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+    const saved = localStorage.getItem("theme") as
+      | "light"
+      | "dark"
+      | null;
 
     const initial =
       saved ||
@@ -15,14 +21,23 @@ export default function App({ Component, pageProps }: any) {
         : "light");
 
     setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
+
+    document.documentElement.classList.toggle(
+      "dark",
+      initial === "dark"
+    );
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
+    const newTheme =
+      theme === "light" ? "dark" : "light";
 
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+
+    localStorage.setItem(
+      "theme",
+      newTheme
+    );
 
     document.documentElement.classList.toggle(
       "dark",
@@ -32,8 +47,10 @@ export default function App({ Component, pageProps }: any) {
 
   return (
     <LoadScript
-      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
-      libraries={["places"]}
+      googleMapsApiKey={
+        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
+      }
+      libraries={GOOGLE_LIBRARIES}
     >
       <Component
         {...pageProps}

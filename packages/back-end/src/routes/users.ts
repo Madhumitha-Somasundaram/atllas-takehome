@@ -105,6 +105,20 @@ const UsersRouter: IRoute = {
           });
         }
 
+        // Check if email already exists
+        const existingUser = await User.findOne({
+          where: { email: parsed.data.email },
+        });
+
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            fieldErrors: {
+              email: "Email already exists. Please enter a unique email ID.",
+            },
+          });
+        }
+
         const user = await User.create({
           ...parsed.data,
           registered: new Date(),
@@ -135,6 +149,23 @@ const UsersRouter: IRoute = {
           return res.status(400).json({
             success: false,
             errors: parsed.error.flatten(),
+          });
+        }
+
+        // Check if email already exists for a different user
+        const existingUser = await User.findOne({
+          where: {
+            email: parsed.data.email,
+            id: { [Op.ne]: id },
+          },
+        });
+
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            fieldErrors: {
+              email: "Email already exists. Please enter a unique email ID.",
+            },
           });
         }
 
