@@ -144,6 +144,12 @@ export default function Home() {
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
+  // ---------------- BULK DELETE ----------------
+  const bulkDeleteUsers = async (ids: number[]) => {
+    await Promise.all(ids.map((id) => deleteUserApi(id)));
+    setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
+  };
+
   // ---------------- EDIT ----------------
   const openEdit = (user: User) => {
     setMode("edit");
@@ -199,7 +205,7 @@ export default function Home() {
       <main className="min-h-screen bg-stone-200 dark:bg-gray-900 transition-colors p-6 space-y-6">
 
         {/* HEADER */}
-        <div className="text-center space-y-3">
+        <div className="top-2 relative flex items-center justify-center">
           <h1 className="text-3xl font-bold text-black dark:text-white">
             User Management
           </h1>
@@ -207,8 +213,7 @@ export default function Home() {
           {/* THEME TOGGLE */}
           <button
             onClick={toggleTheme}
-            className="relative w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center px-1 mx-auto transition-colors duration-300"
-          >
+            className="fixed top-2 right-2 z-50 w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center px-1 transition-colors duration-300">
             <div
               className={`absolute w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${
                 theme === "dark" ? "translate-x-8" : "translate-x-0"
@@ -216,10 +221,10 @@ export default function Home() {
             />
 
             <img
-        src={theme === "dark" ? "/sun1.png" : "/sun.png"}
-        className="w-4 h-4 absolute left-2 transition-opacity duration-300"
-        alt="sun"
-      />
+              src={theme === "dark" ? "/sun1.png" : "/sun.png"}
+              className="w-4 h-4 absolute left-2 transition-opacity duration-300"
+              alt="sun"
+            />
 
             <img
               src="/moon.png"
@@ -245,6 +250,7 @@ export default function Home() {
           users={users}
           onEdit={openEdit}
           onDelete={deleteUser}
+          onBulkDelete={bulkDeleteUsers}
           sort={sort}
           order={order}
           setSort={setSort}

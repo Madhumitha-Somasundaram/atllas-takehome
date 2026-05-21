@@ -7,6 +7,7 @@ type Props = {
   users: User[];
   onEdit: (u: User) => void;
   onDelete: (id: number) => void;
+  onBulkDelete?: (ids: number[]) => void;
 
   sort: SortField;
   order: "ASC" | "DESC";
@@ -45,7 +46,7 @@ function SortableHeader({
     <th
       className={`
         p-3 cursor-pointer select-none
-        dark:border-b border-violet-500
+        dark:border-b border-violet-700
         transition
         ${active ? "font-semibold" : ""}
         text-gray-800 dark:text-white
@@ -153,18 +154,32 @@ function UserCard({
   user,
   onEdit,
   onDelete,
+  isSelected,
+  onToggleSelect,
 }: {
   user: User;
   onEdit: (u: User) => void;
   onDelete: (id: number) => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   return (
-    <div className="bg-stone-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-violet-500/70 hover:bg-violet-900/30 dark:hover:bg-violet-500/20 transition shadow-lg dark:shadow-violet-500/30">
-      {/* First line: ID and action icons */}
+    <div className={`bg-stone-100 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-violet-500/70 hover:bg-violet-900/30 dark:hover:bg-violet-500/20 transition shadow-lg dark:shadow-violet-500/30 ${isSelected ? 'bg-violet-200 dark:bg-violet-900/40 border-violet-500 dark:border-violet-400' : ''}`}>
+      {/* First line: Checkbox, ID and action icons */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-300 dark:border-violet-500/70">
-        <span className="text-sm font-semibold text-gray-800 dark:text-white">
-          ID: {user.id}
-        </span>
+        <div className="flex items-center gap-2">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={onToggleSelect}
+              className="w-4 h-4 cursor-pointer"
+            />
+          )}
+          <span className="text-sm font-semibold text-gray-800 dark:text-white">
+            ID: {user.id}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onEdit(user)}
@@ -285,24 +300,115 @@ function MobileSortControls({
   );
 }
 
+// ---------------- BULK DELETE CONFIRMATION ----------------
+function BulkDeleteConfirmation({
+  count,
+  onConfirm,
+  onCancel,
+}: {
+  count: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Confirm Deletion
+        </h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          Are you sure you want to delete {count} selected user{count > 1 ? 's' : ''}?
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------------- TABLE ----------------
 export default function UserTable({
   users,
   onEdit,
   onDelete,
+  onBulkDelete,
   sort,
   order,
   setSort,
   setOrder,
 }: Props) {
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const toggleSelect = (id: number) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === users.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(users.map((u) => u.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(Array.from(selectedIds));
+    } else {
+      // Fallback to individual deletes
+      selectedIds.forEach((id) => onDelete(id));
+    }
+    setSelectedIds(new Set());
+    setShowDeleteConfirm(false);
+  };
+
   return (
     <>
+      {/* Bulk Delete Button */}
+      {selectedIds.size > 0 && (
+  <div className="mb-4 flex items-center justify-between bg-gray-100/30 rounded-2xl px-2 py-1 border border-gray-200 dark:border-b border-red-700 shadow overflow-x-auto">
+    
+    {/* LEFT SIDE */}
+    <p className="text-sm font-medium text-black dark:text-white">
+      {selectedIds.size} user{selectedIds.size > 1 ? "s" : ""} selected
+    </p>
+
+    {/* RIGHT SIDE */}
+    <button
+      onClick={() => setShowDeleteConfirm(true)}
+      className="px-4 py-2 rounded-lg text-black dark:text-white transition flex items-center gap-2"
+    >
+      <img src="/delete.png" alt="Delete" className="w-4 h-4" />
+      Delete
+    </button>
+  </div>
+)}
+
       {/* Desktop Table View */}
       <div
         className="
           hidden lg:block
           rounded-2xl shadow overflow-x-auto
-          bg-white dark:bg-gray-900 dark:border-2 border-violet-600
+          bg-white dark:bg-gray-900 dark:border border-violet-700
           transition-colors duration-300
         "
       >
@@ -311,6 +417,14 @@ export default function UserTable({
           {/* HEADER */}
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
+              <th className="p-3 dark:border-b border-violet-700">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === users.length && users.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 cursor-pointer"
+                />
+              </th>
               <SortableHeader label="ID" field="id" {...{ sort, order, setSort, setOrder }} />
               <SortableHeader label="First Name" field="firstName" {...{ sort, order, setSort, setOrder }} />
               <SortableHeader label="Middle Name" field="middleName" {...{ sort, order, setSort, setOrder }} />
@@ -321,7 +435,7 @@ export default function UserTable({
               <SortableHeader label="Notes" field="adminNotes" {...{ sort, order, setSort, setOrder }} />
               <SortableHeader label="Registered" field="registered" {...{ sort, order, setSort, setOrder }} />
 
-              <th className="p-3 text-gray-800 dark:text-white dark:border-b border-violet-600">
+              <th className="p-3 text-gray-800 dark:text-white dark:border-b border-violet-700">
                 Actions
               </th>
             </tr>
@@ -332,13 +446,22 @@ export default function UserTable({
             {users.map((u) => (
               <tr
                 key={u.id}
-                className="
+                className={`
                   bg-stone-100
                   dark:bg-gray-900 dark:text-white dark:border-b border-violet-500/40
                   hover:bg-violet-900/30 dark:hover:bg-violet-500/20
                   transition
-                "
+                  ${selectedIds.has(u.id) ? 'bg-violet-200 dark:bg-violet-900/40' : ''}
+                `}
               >
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(u.id)}
+                    onChange={() => toggleSelect(u.id)}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                </td>
                 <td className="p-3 text-gray-800 dark:text-white">{u.id}</td>
                 <td className="p-3 text-gray-800 dark:text-white">{u.firstName}</td>
                 <td className="p-3 text-gray-800 dark:text-white">{u.middleName || "-"}</td>
@@ -366,10 +489,26 @@ export default function UserTable({
         <MobileSortControls sort={sort} order={order} setSort={setSort} setOrder={setOrder} />
         <div className="space-y-4">
           {users.map((u) => (
-            <UserCard key={u.id} user={u} onEdit={onEdit} onDelete={onDelete} />
+            <UserCard
+              key={u.id}
+              user={u}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              isSelected={selectedIds.has(u.id)}
+              onToggleSelect={() => toggleSelect(u.id)}
+            />
           ))}
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <BulkDeleteConfirmation
+          count={selectedIds.size}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </>
   );
 }
