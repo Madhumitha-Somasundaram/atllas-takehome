@@ -1,4 +1,5 @@
 import { User } from "../types/user";
+import { useState } from "react";
 
 type SortField = keyof User;
 
@@ -61,6 +62,68 @@ function SortableHeader({
         )}
       </div>
     </th>
+  );
+}
+
+// ---------------- ACTIONS MENU ----------------
+function ActionsMenu({
+  user,
+  onEdit,
+  onDelete,
+}: {
+  user: User;
+  onEdit: (u: User) => void;
+  onDelete: (id: number) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition"
+      >
+        <img
+          src="/3Dots_black.png"
+          alt="Menu"
+          className="w-5 h-5 dark:hidden"
+        />
+        <img
+          src="/3Dots_White.png"
+          alt="Menu"
+          className="w-5 h-5 hidden dark:block"
+        />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+            <button
+              onClick={() => {
+                onEdit(user);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-t-lg transition"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                onDelete(user.id);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-b-lg transition"
+            >
+              Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -127,21 +190,9 @@ export default function UserTable({
                 {u.registered ? new Date(u.registered).toLocaleDateString() : "-"}
               </td>
 
-              <td className="p-3 flex gap-2">
-                  <button
-                    onClick={() => onEdit(u)}
-                    className="px-3 py-1 bg-violet-800 hover:bg-violet-500 transition text-white rounded-lg dark:bg-violet-600 dark:hover:bg-violet-400"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => onDelete(u.id)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-400 transition text-white rounded-lg"
-                  >
-                    Delete
-                  </button>
-                </td>
+              <td className="p-3">
+                <ActionsMenu user={u} onEdit={onEdit} onDelete={onDelete} />
+              </td>
             </tr>
           ))}
         </tbody>
