@@ -432,14 +432,7 @@ function MobileSortControls({
         onClick={() =>
           setOrder(order === "ASC" ? "DESC" : "ASC")
         }
-        className="
-          px-4 py-2 rounded-lg
-          bg-violet-800 dark:bg-violet-600
-          text-white
-          hover:bg-violet-500 dark:hover:bg-violet-400
-          transition flex items-center gap-2
-        "
-      >
+        className="px-4 py-2 rounded-lg bg-violet-800 dark:bg-violet-800 text-white transition flex items-center gap-2">
         {order === "ASC" ? "▲" : "▼"}
 
         <span className="hidden sm:inline">
@@ -551,6 +544,25 @@ export default function UserTable({
     setSelectedIds(new Set());
     setShowDeleteConfirm(false);
   };
+
+  // Empty state
+  if (users.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900/10 rounded-2xl border border-gray-200 dark:border-violet-700">
+        <img
+          src="/user_not_found.png"
+          alt="No users found"
+          className="w-48 h-48 mb-6 opacity-80 dark:opacity-80"
+        />
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+          No Users Found
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 text-center">
+          There are no users to display. Add a new user to get started.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
