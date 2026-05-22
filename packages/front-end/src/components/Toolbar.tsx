@@ -33,6 +33,10 @@ export default function Toolbar({
     { value: "lastName-desc", label: "Last Name (Z→A)", field: "lastName", order: "DESC" },
     { value: "email-asc", label: "Email (A→Z)", field: "email", order: "ASC" },
     { value: "email-desc", label: "Email (Z→A)", field: "email", order: "DESC" },
+    { value: "phoneNumber-asc", label: "Phone (A→Z)", field: "phoneNumber", order: "ASC" },
+    { value: "phoneNumber-desc", label: "Phone (Z→A)", field: "phoneNumber", order: "DESC" },
+    { value: "address-asc", label: "Address (A→Z)", field: "address", order: "ASC" },
+    { value: "address-desc", label: "Address (Z→A)", field: "address", order: "DESC" },
     { value: "registered-desc", label: "Registration (Newest)", field: "registered", order: "DESC" },
     { value: "registered-asc", label: "Registration (Oldest)", field: "registered", order: "ASC" },
   ];

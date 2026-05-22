@@ -39,6 +39,14 @@ export default function EditUserModal({
   const [showDropdown, setShowDropdown] =
     useState(false);
 
+  // ✅ Disable body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   // ✅ Prefill edit form
   useEffect(() => {
     if (mode === "edit" && user) {

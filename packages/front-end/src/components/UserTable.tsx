@@ -13,6 +13,9 @@ type Props = {
   order: "ASC" | "DESC";
   setSort: (v: SortField) => void;
   setOrder: (v: "ASC" | "DESC") => void;
+
+  loading?: boolean;
+  initialLoadComplete?: boolean;
 };
 
 // ---------------- HEADER ----------------
@@ -447,6 +450,8 @@ export default function UserTable({
   order,
   setSort,
   setOrder,
+  loading = false,
+  initialLoadComplete = false,
 }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(
     new Set()
@@ -496,8 +501,8 @@ export default function UserTable({
     setShowDeleteConfirm(false);
   };
 
-  // Empty state
-  if (users.length === 0) {
+  // Empty state - only show when not loading and initial load is complete
+  if (users.length === 0 && !loading && initialLoadComplete) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900/10 rounded-2xl border border-gray-200 dark:border-violet-700">
         <img
@@ -516,7 +521,7 @@ export default function UserTable({
   }
 
   return (
-    <>
+    <div className="transition-opacity duration-300 ease-in-out" style={{ opacity: loading && users.length === 0 ? 0.5 : 1 }}>
       {/* BULK DELETE */}
       {selectedIds.size > 0 && (
         <div
@@ -617,11 +622,9 @@ export default function UserTable({
                 {...{ sort, order, setSort, setOrder }}
               />
 
-              <SortableHeader
-                label="Notes"
-                field="adminNotes"
-                {...{ sort, order, setSort, setOrder }}
-              />
+              <th className="p-3 text-gray-800 dark:text-white dark:border-b border-violet-700">
+                Notes
+              </th>
 
               <SortableHeader
                 label="Registered"
@@ -737,6 +740,6 @@ export default function UserTable({
           onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
-    </>
+    </div>
   );
 }

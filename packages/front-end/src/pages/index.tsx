@@ -24,6 +24,7 @@ type HomeProps = {
 export default function Home({ theme, toggleTheme }: HomeProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const [search, setSearch] = useState("");
 
@@ -55,11 +56,19 @@ export default function Home({ theme, toggleTheme }: HomeProps) {
       ).then((data) => {
         const newUsers = data?.data ?? [];
 
-        setUsers((prev) => (reset ? newUsers : [...prev, ...newUsers]));
+        setUsers((prev) => {
+          if (reset) return newUsers;
+
+          // Deduplicate by ID to prevent duplicate keys
+          const existingIds = new Set(prev.map(u => u.id));
+          const uniqueNewUsers = newUsers.filter(u => !existingIds.has(u.id));
+          return [...prev, ...uniqueNewUsers];
+        });
         setHasMore(Boolean(data?.hasMore));
         setPage(pageToFetch + 1);
         setLoading(false);
         loadingRef.current = false;
+        setInitialLoadComplete(true);
       });
 
       return reset ? 1 : currentPage;
@@ -68,7 +77,7 @@ export default function Home({ theme, toggleTheme }: HomeProps) {
 
   // ---------------- SORT ----------------
   useEffect(() => {
-    setUsers([]);
+    setLoading(true);
     setPage(1);
     loadUsers(true);
   }, [sort, order, loadUsers]);
@@ -76,7 +85,7 @@ export default function Home({ theme, toggleTheme }: HomeProps) {
   // ---------------- SEARCH ----------------
   useEffect(() => {
     const t = setTimeout(() => {
-      setUsers([]);
+      setLoading(true);
       setPage(1);
       loadUsers(true);
     }, 300);
@@ -256,6 +265,8 @@ export default function Home({ theme, toggleTheme }: HomeProps) {
           order={order}
           setSort={setSort}
           setOrder={setOrder}
+          loading={loading}
+          initialLoadComplete={initialLoadComplete}
         />
 
         <div ref={loaderRef} className="h-10" />
