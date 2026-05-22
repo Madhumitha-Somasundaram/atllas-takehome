@@ -26,7 +26,8 @@ const queue = readdirSync(_ROUTES_ROOT)
 // For each item in the queue, inject it as an API route.
 queue.forEach(entry => {
   try {
-    const required = require(entry);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const required = require(entry);    
     if (required?.default) {
       const { route, router }: IRoute = required.default;
       app.use(route, router());

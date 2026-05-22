@@ -475,6 +475,16 @@ export default function UserTable({
     }
   };
 
+  const handleSingleDelete = (id: number) => {
+    onDelete(id);
+
+    setSelectedIds((prev) => {
+      const updated = new Set(prev);
+      updated.delete(id);
+      return updated;
+    });
+  };
+
   const handleBulkDelete = () => {
     if (onBulkDelete) {
       onBulkDelete(Array.from(selectedIds));
@@ -696,7 +706,7 @@ export default function UserTable({
                   <ActionsMenu
                     user={u}
                     onEdit={onEdit}
-                    onDelete={onDelete}
+                    onDelete={handleSingleDelete}
                   />
                 </td>
               </tr>
@@ -712,7 +722,7 @@ export default function UserTable({
             key={u.id}
             user={u}
             onEdit={onEdit}
-            onDelete={onDelete}
+            onDelete={handleSingleDelete}
             isSelected={selectedIds.has(u.id)}
             onToggleSelect={() => toggleSelect(u.id)}
           />

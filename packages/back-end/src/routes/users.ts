@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import IRoute from '../types/IRoute';
 import { User } from '../services/db';
-import { Op, Order } from "sequelize";
+import { Op } from "sequelize";
 import { userSchema } from "../shared/userSchema";
 
 const UsersRouter: IRoute = {

@@ -15,7 +15,13 @@ import {
 
 type SortField = keyof User;
 
-export default function Home() {
+type HomeProps = {
+  theme: "light" | "dark";
+  toggleTheme: () => void;
+  isGoogleMapsLoaded?: boolean;
+};
+
+export default function Home({ theme, toggleTheme }: HomeProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,31 +40,6 @@ export default function Home() {
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<"create" | "edit">("edit");
-
-  // ---------------- THEME ----------------
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
-
-    const initial =
-      saved ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
-
-    setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
 
   // ---------------- FETCH USERS ----------------
   const loadUsers = useCallback(async (reset = false) => {

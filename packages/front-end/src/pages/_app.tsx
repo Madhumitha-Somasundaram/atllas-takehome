@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { LoadScript } from "@react-google-maps/api";
+import Script from "next/script";
 import "../styles/globals.css";
-
-// ✅ keep static
-const GOOGLE_LIBRARIES: ("places")[] = ["places"];
 
 export default function App({ Component, pageProps }: any) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") as
@@ -46,17 +44,18 @@ export default function App({ Component, pageProps }: any) {
   };
 
   return (
-    <LoadScript
-      googleMapsApiKey={
-        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
-      }
-      libraries={GOOGLE_LIBRARIES}
-    >
+    <>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`}
+        strategy="afterInteractive"
+        onLoad={() => setIsGoogleMapsLoaded(true)}
+      />
       <Component
         {...pageProps}
         theme={theme}
         toggleTheme={toggleTheme}
+        isGoogleMapsLoaded={isGoogleMapsLoaded}
       />
-    </LoadScript>
+    </>
   );
 }
